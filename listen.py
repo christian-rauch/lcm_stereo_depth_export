@@ -14,14 +14,20 @@ import os
 # matrix processing and visualisation
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 import cv2
 
-#def disparity_to_points(disp_img):
+def disparity_to_points(disp_img):
+    # disparity image as signed integer 16bit
+    points = cv2.reprojectImageTo3D(disparity=disp_img.astype(np.int16), Q=Q_transf_mat)
+    return points
 
 def image_handle(channel, data):
     global first_image
     global plotobj
+    global plot3d_obj
+    global plot3d_ax
 
     msg = images_t.decode(data)
     #print "time: ",msg.utime
@@ -71,19 +77,48 @@ def image_handle(channel, data):
                     #plotobj = plt.imshow(img16, cmap='gray')
                     plotobj = plt.matshow(img16)
                     plt.show(block=False)
-                    first_image = False;
+                    first_image = False
                 else:
                     # plot into existing window
                     plotobj.set_array(img16)
                     plt.draw()
 
+            if plot_points:
+                p = disparity_to_points(img16)
+                if first_image:
+                    fig = plt.figure()
+                    plot3d_ax = fig.add_subplot(111, projection='3d')
+                    plot3d_ax.scatter(p[:,1], p[:,2], p[:,3])
+                    plt.show(block=False)
+                    first_image = False
+                else:
+                    plot3d_ax.clear()
+                    plot3d_ax.scatter(p[:, 1], p[:, 2], p[:, 3])
+                    plt.draw()
+
             if write_depth:
+                if export_distance:
+                    # Z = (f*b)/d
+                    img16_depth = (556.183166504 * 0.07)/img16 # distance in meter
+                    img16_depth = np.around(img16_depth * 1000) # distance in mm
+                    #print "img16 min max", np.min(img16_depth), np.max(img16_depth[~np.isinf(img16_depth)]), img16_depth.dtype
+                    img16_depth = img16_depth.astype(dtype=np.uint16)
+                    # set disparity 0 to maximum distance
+                    #img16_depth[img16 == 0] = np.iinfo(np.uint16).max
+                    img16 = img16_depth
+                    #print "img16 min max", np.min(img16), np.max(img16[~np.isinf(img16)]), img16.dtype
+                    img_type_str = "depth"
+                else:
+                    img_type_str = "disparity"
                 #print np.min(img16), np.max(img16)
-                img16 = (np.iinfo(np.uint16).max - img16) # invert disparity values
+                #img16 = (np.iinfo(np.uint16).max - img16) # invert disparity values
                 #print np.min(img16), np.max(img16)
                 #print "img16",img16
                 #print "img16 min max", np.min(img16), np.max(img16)
-                cv2.imwrite(os.path.join(img_path, "depth_"+str(img.utime)+".png"), img16)
+                #print "img16 min max", np.min(img16), np.max(img16[~np.isinf(img16)]), img16.dtype
+                #img16 = img16.astype(np.uint16)
+                #print "img16 min max", np.min(img16), np.max(img16[~np.isinf(img16)]), img16.dtype
+                cv2.imwrite(os.path.join(img_path, img_type_str+"_"+str(img.utime)+".png"), img16)
                 #img8 = ((img16/float(np.iinfo(np.uint16).max)) * np.iinfo(np.uint8).max).astype(np.uint8)
                 #cv2.imwrite(os.path.join(img_path, "depth_" + str(img.utime) + ".png"), img8)
 
@@ -94,24 +129,29 @@ global plotobj
 global img_path
 global plot_depth
 global write_depth
+global plot3d_obj
+global plot3d_ax
 
 # write or plot images
 plot_depth = False
 write_depth = True
+plot_points = False
+
+export_distance = True # distance or disparity images, True will convert LCM disparity to distance
 
 # flag to set properties for initial window (resolution, value range)
 first_image = True
 
-Q = np.zeros((4,4))
-Q[0,0] = 1
-Q[1,1] = 1
-Q[0,3] = -512
-Q[1,3] = -512
-Q[2,3] = 6.5 # mm
-Q[3,2] = -1/0.07
-Q[3,3] = -1/0.07
+Q_transf_mat = np.zeros((4, 4))
+Q_transf_mat[0, 0] = 1
+Q_transf_mat[1, 1] = 1
+Q_transf_mat[0, 3] = -512
+Q_transf_mat[1, 3] = -512
+Q_transf_mat[2, 3] = 556.18 # pxl
+Q_transf_mat[3, 2] = -1 / -0.07 # B=7cm
+Q_transf_mat[3, 3] = 0
 
-print Q
+print Q_transf_mat
 
 img_path = "video/"
 

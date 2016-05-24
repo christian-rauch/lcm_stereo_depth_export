@@ -1,0 +1,14 @@
+# exported image files
+*.png
+
+# vim files
+*.swp
+
+# PyCharm files
+.idea/
+
+# compiled python files
+*.pyc
+
+# LCM type definitions
+*.lcm
