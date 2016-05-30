@@ -99,7 +99,7 @@ def image_handle(channel, data):
             if write_depth:
                 if export_distance:
                     # Z = (f*b)/d
-                    img16_depth = (556.183166504 * 0.07)/img16 # distance in meter
+                    img16_depth = (556.183166504 * 0.07) / (img16 * (1.0/16.0)) # distance in meter
                     img16_depth = np.around(img16_depth * 1000) # distance in mm
                     #print "img16 min max", np.min(img16_depth), np.max(img16_depth[~np.isinf(img16_depth)]), img16_depth.dtype
                     img16_depth = img16_depth.astype(dtype=np.uint16)
