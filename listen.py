@@ -181,3 +181,6 @@ if __name__ == "__main__":
             lc.handle()
     except KeyboardInterrupt:
         pass
+    except IOError:
+        print "done with log ..."
+        sys.exit()
