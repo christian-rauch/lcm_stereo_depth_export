@@ -8,8 +8,12 @@ from bot_core import *
 
 # zlib for de/compression
 import zlib
+# jpeg de/compression
+from cStringIO import StringIO
+from PIL import Image
 
 import os
+import sys
 
 # matrix processing and visualisation
 import numpy as np
@@ -122,48 +126,58 @@ def image_handle(channel, data):
                 #img8 = ((img16/float(np.iinfo(np.uint16).max)) * np.iinfo(np.uint8).max).astype(np.uint8)
                 #cv2.imwrite(os.path.join(img_path, "depth_" + str(img.utime) + ".png"), img8)
 
+        if img_type == images_t.LEFT: # or img_type == images_t.RIGHT:
+            datafile = StringIO(img.data)
+            colourdata = Image.open(datafile)
+            colourdata.save(os.path.join(img_path, "colour_" + str(img.utime) + ".png"))
 
-# global variables for updating image view
-global first_image
-global plotobj
-global img_path
-global plot_depth
-global write_depth
-global plot3d_obj
-global plot3d_ax
+if __name__ == "__main__":
+    # global variables for updating image view
+    global first_image
+    global plotobj
+    global img_path
+    global plot_depth
+    global write_depth
+    global plot3d_obj
+    global plot3d_ax
 
-# write or plot images
-plot_depth = False
-write_depth = True
-plot_points = False
+    # write or plot images
+    plot_depth = False
+    write_depth = True
+    plot_points = False
 
-export_distance = True # distance or disparity images, True will convert LCM disparity to distance
+    export_distance = True # distance or disparity images, True will convert LCM disparity to distance
 
-# flag to set properties for initial window (resolution, value range)
-first_image = True
+    # flag to set properties for initial window (resolution, value range)
+    first_image = True
 
-Q_transf_mat = np.zeros((4, 4))
-Q_transf_mat[0, 0] = 1
-Q_transf_mat[1, 1] = 1
-Q_transf_mat[0, 3] = -512
-Q_transf_mat[1, 3] = -512
-Q_transf_mat[2, 3] = 556.18 # pxl
-Q_transf_mat[3, 2] = -1 / -0.07 # B=7cm
-Q_transf_mat[3, 3] = 0
+    Q_transf_mat = np.zeros((4, 4))
+    Q_transf_mat[0, 0] = 1
+    Q_transf_mat[1, 1] = 1
+    Q_transf_mat[0, 3] = -512
+    Q_transf_mat[1, 3] = -512
+    Q_transf_mat[2, 3] = 556.18 # pxl
+    Q_transf_mat[3, 2] = -1 / -0.07 # B=7cm
+    Q_transf_mat[3, 3] = 0
 
-print Q_transf_mat
+    print Q_transf_mat
 
-img_path = "video/"
+    img_path = "video/"
 
-lc = lcm.LCM()
-subs = lc.subscribe("CAMERA", image_handle)
+    if len(sys.argv) > 1:
+        print "reading from log: ", sys.argv[1]
+        lc = lcm.LCM("file://" + sys.argv[1])
+    else:
+        lc = lcm.LCM()
 
-if write_depth:
-    if not os.path.exists(img_path):
-        os.makedirs(img_path)
+    subs = lc.subscribe("CAMERA", image_handle)
 
-try:
-    while True:
-        lc.handle()
-except KeyboardInterrupt:
-    pass
+    if write_depth:
+        if not os.path.exists(img_path):
+            os.makedirs(img_path)
+
+    try:
+        while True:
+            lc.handle()
+    except KeyboardInterrupt:
+        pass
