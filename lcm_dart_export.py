@@ -2,6 +2,9 @@
 import lcm
 import sys
 import zlib
+# jpeg de/compression
+from cStringIO import StringIO
+from PIL import Image
 
 import csv
 
@@ -78,8 +81,14 @@ class Export:
                 #csvwriter.writerow([str(img.utime)]+list(self.joint_values))
                 csvwriter.writerow(list(self.joint_values))
 
+            if img_type == images_t.LEFT:  # or img_type == images_t.RIGHT:
+                datafile = StringIO(img.data)
+                colourdata = Image.open(datafile)
+                colourdata.save(os.path.join(img_path, "colour_" + str(img.utime) + ".png"))
+
 
 if __name__ == "__main__":
+    # export_distance: True => depth, False => disparity
     export_distance = True
     log = lcm.EventLog(sys.argv[1], "r")
 
