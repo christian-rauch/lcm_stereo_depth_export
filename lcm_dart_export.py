@@ -110,7 +110,7 @@ if __name__ == "__main__":
     joint_file = open(os.path.join(joint_path, "joints.csv"), 'w')
     csvwriter = csv.writer(joint_file, delimiter=',')
 
-    joint_name_file = open(os.path.join(joint_path, "joint_namess.csv"), 'w')
+    joint_name_file = open(os.path.join(joint_path, "joint_names.csv"), 'w')
 
     timestamp_file = open(os.path.join(joint_path, "timestamps.csv"), 'w')
     timewriter = csv.writer(timestamp_file, delimiter=',')
