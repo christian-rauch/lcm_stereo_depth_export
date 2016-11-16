@@ -69,9 +69,14 @@ class Export:
                 #print "write", self.joint_values
                 #print "write",[str(img.utime)]+list(self.joint_values)
                 if not self.wrote_names:
-                    csvwriter.writerow(["#time"] + list(self.joint_names))
+                    namewriter = csv.writer(joint_name_file, delimiter=',')
+                    namewriter.writerow(list(self.joint_names))
+                    #csvwriter.writerow(["#time"] + list(self.joint_names))
+                    joint_name_file.close()
                     self.wrote_names = True
-                csvwriter.writerow([str(img.utime)]+list(self.joint_values))
+                timewriter.writerow([str(img.utime)])
+                #csvwriter.writerow([str(img.utime)]+list(self.joint_values))
+                csvwriter.writerow(list(self.joint_values))
 
 
 if __name__ == "__main__":
@@ -96,6 +101,11 @@ if __name__ == "__main__":
     joint_file = open(os.path.join(joint_path, "joints.csv"), 'w')
     csvwriter = csv.writer(joint_file, delimiter=',')
 
+    joint_name_file = open(os.path.join(joint_path, "joint_namess.csv"), 'w')
+
+    timestamp_file = open(os.path.join(joint_path, "timestamps.csv"), 'w')
+    timewriter = csv.writer(timestamp_file, delimiter=',')
+
     for event in log:
         if event.channel == "CAMERA":
             msg = images_t.decode(event.data)
@@ -103,3 +113,6 @@ if __name__ == "__main__":
         if event.channel == "EST_ROBOT_STATE":
             msg = robot_state_t.decode(event.data)
             exporter.last_joint_state(msg)
+
+    joint_file.close()
+    timestamp_file.close()
