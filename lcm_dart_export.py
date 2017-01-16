@@ -5,6 +5,7 @@ import zlib
 # jpeg de/compression
 from cStringIO import StringIO
 from PIL import Image
+from PIL import ImageFile
 
 import csv
 
@@ -25,7 +26,7 @@ class Export:
             self.joint_names = msg.joint_name
         self.joint_values = msg.joint_position
 
-    def depth_img_to_file(self, msg):
+    def depth_img_to_file(self, msg, img_path):
         for i in range(msg.n_images):
             img = msg.images[i]
             img_type = msg.image_types[i]
@@ -69,17 +70,39 @@ class Export:
                 else:
                     img_type_str = "disparity"
                 cv2.imwrite(os.path.join(img_path, img_type_str+"_"+str(img.utime)+".png"), img16)
-                #print "write", self.joint_values
-                #print "write",[str(img.utime)]+list(self.joint_values)
+
+                # write joint values associated wih image
                 if not self.wrote_names:
-                    namewriter = csv.writer(joint_name_file, delimiter=',')
-                    namewriter.writerow(list(self.joint_names))
-                    #csvwriter.writerow(["#time"] + list(self.joint_names))
+                    for jn in self.joint_names:
+                        joint_name_file.write(jn + '\n')
+                    # csvwriter_multisense.writerow(["#time"] + list(self.joint_names))
                     joint_name_file.close()
                     self.wrote_names = True
-                timewriter.writerow([str(img.utime)])
-                #csvwriter.writerow([str(img.utime)]+list(self.joint_values))
-                csvwriter.writerow(list(self.joint_values))
+                timewriter_multisense.writerow([str(img.utime)])
+                # csvwriter_multisense.writerow([str(img.utime)]+list(self.joint_values))
+                csvwriter_multisense.writerow(list(self.joint_values))
+
+            if img_type == images_t.DEPTH_MM_ZIPPED or img_type == images_t.DEPTH_MM:
+                img_type_str = "depth"
+                if img_type == images_t.DEPTH_MM_ZIPPED:
+                    raw_compressed_data = img.data
+                    raw_decompressed_data = zlib.decompress(raw_compressed_data)
+                    raw_data = raw_decompressed_data
+                if img_type == images_t.DEPTH_MM:
+                    raw_data = img.data
+
+                img16 = np.fromstring(raw_data, dtype=np.uint16)
+
+                cv2.imwrite(os.path.join(img_path, img_type_str + "_" + str(img.utime) + ".png"), img16)
+
+                # write joint values associated wih image
+                if not self.wrote_names:
+                    for jn in self.joint_names:
+                        joint_name_file.write(jn + '\n')
+                    joint_name_file.close()
+                    self.wrote_names = True
+                timewriter_openni.writerow([str(img.utime)])
+                csvwriter_openni.writerow(list(self.joint_values))
 
             if img_type == images_t.LEFT:  # or img_type == images_t.RIGHT:
                 datafile = StringIO(img.data)
@@ -88,6 +111,8 @@ class Export:
 
 
 if __name__ == "__main__":
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
+
     # export_distance: True => depth, False => disparity
     export_distance = True
     log = lcm.EventLog(sys.argv[1], "r")
@@ -96,32 +121,37 @@ if __name__ == "__main__":
     img_folder = "video"
     joint_folder = "joints"
 
-    img_path = os.path.join(export_folder, img_folder)
+
     joint_path = os.path.join(export_folder, joint_folder)
 
     exporter = Export()
 
-    if not os.path.exists(img_path):
-        os.makedirs(img_path)
-
     if not os.path.exists(joint_path):
         os.makedirs(joint_path)
 
-    joint_file = open(os.path.join(joint_path, "joints.csv"), 'w')
-    csvwriter = csv.writer(joint_file, delimiter=',')
+    csvwriter_multisense = csv.writer(open(os.path.join(joint_path, "joints_multisense.csv"), 'w'), delimiter=',')
+    csvwriter_openni = csv.writer(open(os.path.join(joint_path, "joints_openni.csv"), 'w'), delimiter=',')
 
     joint_name_file = open(os.path.join(joint_path, "joint_names.csv"), 'w')
 
-    timestamp_file = open(os.path.join(joint_path, "timestamps.csv"), 'w')
-    timewriter = csv.writer(timestamp_file, delimiter=',')
+    timewriter_multisense = csv.writer(open(os.path.join(joint_path, "timestamps_multisense.csv"), 'w'), delimiter=',')
+    timewriter_openni = csv.writer(open(os.path.join(joint_path, "timestamps_openni.csv"), 'w'), delimiter=',')
 
     for event in log:
         if event.channel == "CAMERA":
+            img_path = os.path.join(export_folder, img_folder+"_multisense")
+            if not os.path.exists(img_path):
+                os.makedirs(img_path)
             msg = images_t.decode(event.data)
-            exporter.depth_img_to_file(msg)
+            exporter.depth_img_to_file(msg, img_path)
+
+        if event.channel == "OPENNI_FRAME":
+            img_path = os.path.join(export_folder, img_folder + "_openni")
+            if not os.path.exists(img_path):
+                os.makedirs(img_path)
+            msg = images_t.decode(event.data)
+            exporter.depth_img_to_file(msg, img_path)
+
         if event.channel == "EST_ROBOT_STATE":
             msg = robot_state_t.decode(event.data)
             exporter.last_joint_state(msg)
-
-    joint_file.close()
-    timestamp_file.close()
