@@ -92,6 +92,7 @@ class Export:
                     raw_data = img.data
 
                 img16 = np.fromstring(raw_data, dtype=np.uint16)
+                img16 = np.reshape(img16, (img.height, img.width))
 
                 cv2.imwrite(os.path.join(img_path, img_type_str + "_" + str(img.utime) + ".png"), img16)
 
