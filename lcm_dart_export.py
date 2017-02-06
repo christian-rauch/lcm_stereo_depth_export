@@ -19,10 +19,13 @@ from bot_core import images_t, robot_state_t
 
 class Export:
     def __init__(self):
-        self.wrote_names = False
+        self.wrote_names_multisense = False
+        self.wrote_names_openni = False
 
+    # store curent joint values, this will always store the most recent values
+    # we hope this gets called before any image arrives
     def last_joint_state(self, msg):
-        if not self.wrote_names:
+        if not (self.wrote_names_multisense or self.wrote_names_openni):
             self.joint_names = msg.joint_name
         self.joint_values = msg.joint_position
 
@@ -72,12 +75,12 @@ class Export:
                 cv2.imwrite(os.path.join(img_path, img_type_str+"_"+str(img.utime)+".png"), img16)
 
                 # write joint values associated wih image
-                if not self.wrote_names:
-                    for jn in self.joint_names:
-                        joint_name_file.write(jn + '\n')
-                    # csvwriter_multisense.writerow(["#time"] + list(self.joint_names))
-                    joint_name_file.close()
-                    self.wrote_names = True
+                if not self.wrote_names_multisense:
+                    csvwriter_multisense.writerow(list(self.joint_names))
+                    # for jn in self.joint_names:
+                    #     joint_name_file.write(jn + '\n')
+                    # joint_name_file.close()
+                    self.wrote_names_multisense = True
                 timewriter_multisense.writerow([str(img.utime)])
                 # csvwriter_multisense.writerow([str(img.utime)]+list(self.joint_values))
                 csvwriter_multisense.writerow(list(self.joint_values))
@@ -97,11 +100,9 @@ class Export:
                 cv2.imwrite(os.path.join(img_path, img_type_str + "_" + str(img.utime) + ".png"), img16)
 
                 # write joint values associated wih image
-                if not self.wrote_names:
-                    for jn in self.joint_names:
-                        joint_name_file.write(jn + '\n')
-                    joint_name_file.close()
-                    self.wrote_names = True
+                if not self.wrote_names_openni:
+                    csvwriter_openni.writerow(list(self.joint_names))
+                    self.wrote_names_openni = True
                 timewriter_openni.writerow([str(img.utime)])
                 csvwriter_openni.writerow(list(self.joint_values))
 
@@ -132,8 +133,6 @@ if __name__ == "__main__":
 
     csvwriter_multisense = csv.writer(open(os.path.join(joint_path, "joints_multisense.csv"), 'w'), delimiter=',')
     csvwriter_openni = csv.writer(open(os.path.join(joint_path, "joints_openni.csv"), 'w'), delimiter=',')
-
-    joint_name_file = open(os.path.join(joint_path, "joint_names.csv"), 'w')
 
     timewriter_multisense = csv.writer(open(os.path.join(joint_path, "timestamps_multisense.csv"), 'w'), delimiter=',')
     timewriter_openni = csv.writer(open(os.path.join(joint_path, "timestamps_openni.csv"), 'w'), delimiter=',')
