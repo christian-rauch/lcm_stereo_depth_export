@@ -72,7 +72,7 @@ class Export:
                     img_type_str = "depth"
                 else:
                     img_type_str = "disparity"
-                cv2.imwrite(os.path.join(img_path, img_type_str+"_"+str(img.utime)+".png"), img16)
+                cv2.imwrite(os.path.join(img_path, img_type_str+"_"+str(msg.utime)+".png"), img16)
 
                 # write joint values associated wih image
                 if not self.wrote_names_multisense:
@@ -81,8 +81,8 @@ class Export:
                     #     joint_name_file.write(jn + '\n')
                     # joint_name_file.close()
                     self.wrote_names_multisense = True
-                timewriter_multisense.writerow([str(img.utime)])
-                # csvwriter_multisense.writerow([str(img.utime)]+list(self.joint_values))
+                timewriter_multisense.writerow([str(msg.utime)])
+                # csvwriter_multisense.writerow([str(msg.utime)]+list(self.joint_values))
                 csvwriter_multisense.writerow(list(self.joint_values))
 
             if img_type == images_t.DEPTH_MM_ZIPPED or img_type == images_t.DEPTH_MM:
@@ -97,19 +97,19 @@ class Export:
                 img16 = np.fromstring(raw_data, dtype=np.uint16)
                 img16 = np.reshape(img16, (img.height, img.width))
 
-                cv2.imwrite(os.path.join(img_path, img_type_str + "_" + str(img.utime) + ".png"), img16)
+                cv2.imwrite(os.path.join(img_path, img_type_str + "_" + str(msg.utime) + ".png"), img16)
 
                 # write joint values associated wih image
                 if not self.wrote_names_openni:
                     csvwriter_openni.writerow(list(self.joint_names))
                     self.wrote_names_openni = True
-                timewriter_openni.writerow([str(img.utime)])
+                timewriter_openni.writerow([str(msg.utime)])
                 csvwriter_openni.writerow(list(self.joint_values))
 
             if img_type == images_t.LEFT:  # or img_type == images_t.RIGHT:
                 datafile = StringIO(img.data)
                 colourdata = Image.open(datafile)
-                colourdata.save(os.path.join(img_path, "colour_" + str(img.utime) + ".png"))
+                colourdata.save(os.path.join(img_path, "colour_" + str(msg.utime) + ".png"))
 
 
 if __name__ == "__main__":
