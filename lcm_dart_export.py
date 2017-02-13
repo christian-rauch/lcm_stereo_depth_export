@@ -131,11 +131,11 @@ if __name__ == "__main__":
     if not os.path.exists(joint_path):
         os.makedirs(joint_path)
 
-    csvwriter_multisense = csv.writer(open(os.path.join(joint_path, "joints_multisense.csv"), 'w'), delimiter=',')
-    csvwriter_openni = csv.writer(open(os.path.join(joint_path, "joints_openni.csv"), 'w'), delimiter=',')
+    csvwriter_multisense = csv.writer(open(os.path.join(joint_path, "joints_multisense.csv"), 'w'), delimiter=' ')
+    csvwriter_openni = csv.writer(open(os.path.join(joint_path, "joints_openni.csv"), 'w'), delimiter=' ')
 
-    timewriter_multisense = csv.writer(open(os.path.join(joint_path, "timestamps_multisense.csv"), 'w'), delimiter=',')
-    timewriter_openni = csv.writer(open(os.path.join(joint_path, "timestamps_openni.csv"), 'w'), delimiter=',')
+    timewriter_multisense = csv.writer(open(os.path.join(joint_path, "timestamps_multisense.csv"), 'w'), delimiter=' ')
+    timewriter_openni = csv.writer(open(os.path.join(joint_path, "timestamps_openni.csv"), 'w'), delimiter=' ')
 
     for event in log:
         if event.channel == "CAMERA":
