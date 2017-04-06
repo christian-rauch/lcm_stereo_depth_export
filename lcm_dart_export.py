@@ -74,7 +74,7 @@ class Export:
                     img_type_str = "disparity"
                 cv2.imwrite(os.path.join(img_path, img_type_str+"_"+str(msg.utime)+".png"), img16)
 
-                # write joint values associated wih image
+                # write joint values associated with image
                 if not self.wrote_names_multisense:
                     csvwriter_multisense.writerow(list(self.joint_names))
                     # for jn in self.joint_names:
