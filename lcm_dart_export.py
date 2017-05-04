@@ -138,7 +138,7 @@ if __name__ == "__main__":
     timewriter_openni = csv.writer(open(os.path.join(joint_path, "timestamps_openni.csv"), 'w'), delimiter=' ')
 
     for event in log:
-        if event.channel == "CAMERA":
+        if event.channel in ["CAMERA", "MULTISENSE_CAMERA"]:
             img_path = os.path.join(export_folder, img_folder+"_multisense")
             if not os.path.exists(img_path):
                 os.makedirs(img_path)
